@@ -1,4 +1,4 @@
-use sqlx::{SqlitePool, query};
+use sqlx::{SqlitePool, query, Row};
 use chrono::{NaiveDateTime, Utc};
 use std::error::Error;
 
@@ -9,8 +9,8 @@ pub struct Database {
 impl Database {
     // Initialize the database connection
     pub async fn new() -> Result<Self, Box<dyn Error>> {
-        let database_url = "sqlite://suspensions.db"; // Path to the SQLite file
-        let pool = SqlitePool::connect(database_url).await?;
+        let database_url = std::env::var("DATABASE_URL").expect("Missing DATABASE_URL"); // Path to the SQLite file
+        let pool = SqlitePool::connect(&database_url).await?;
 
         // Create the table if it doesn't exist
         sqlx::query(
@@ -38,7 +38,7 @@ impl Database {
         previous_roles: &[String],
         from_datetime: &str,
         until_datetime: &str,
-        reason: Option<&str>,
+        reason: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO suspensions (user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason)
@@ -46,7 +46,7 @@ impl Database {
         )
             .bind(user_id)
             .bind(moderator_id)
-            .bind(previous_roles.join(","))
+            .bind(previous_roles.join(",")) // Convert Vec<String> to a single comma-separated string
             .bind(from_datetime)
             .bind(until_datetime)
             .bind(reason)
@@ -56,26 +56,29 @@ impl Database {
         Ok(())
     }
 
-    // Retrieve active suspensions
-    pub async fn get_active_suspensions(&self) -> Result<Vec<Suspension>, sqlx::Error> {
-        let rows = sqlx::query!(
+    // Retrieve active suspensions for a specific user
+    pub async fn get_active_suspensions(&self, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
+        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let rows = sqlx::query(
             "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
-             FROM suspensions WHERE until_datetime > ?",
-            Utc::now().format("%Y-%m-%d %H:%M:%S").to_string()
+             FROM suspensions WHERE until_datetime > ? AND user_id = ?",
         )
+            .bind(&now)
+            .bind(&user_id)
             .fetch_all(&self.pool)
             .await?;
 
         let suspensions = rows
             .into_iter()
             .map(|row| Suspension {
-                id: row.id,
-                user_id: row.user_id,
-                moderator_id: row.moderator_id,
-                previous_roles: row.previous_roles.split(',').map(String::from).collect(),
-                from_datetime: row.from_datetime,
-                until_datetime: row.until_datetime,
-                reason: row.reason,
+                id: row.get("id"),
+                user_id: row.get("user_id"),
+                moderator_id: row.get("moderator_id"),
+                previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
+                from_datetime: row.get("from_datetime"),
+                until_datetime: row.get("until_datetime"),
+                reason: row.get("reason"),
             })
             .collect();
 
