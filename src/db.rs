@@ -21,7 +21,8 @@ impl Database {
                 previous_roles TEXT NOT NULL,
                 from_datetime TEXT NOT NULL,
                 until_datetime TEXT NOT NULL,
-                reason TEXT
+                reason TEXT,
+                active BOOLEAN NOT NULL
             )",
         )
             .execute(&pool)
@@ -41,7 +42,7 @@ impl Database {
         reason: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO suspensions (user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason)
+            "INSERT INTO suspensions (user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active)
              VALUES (?, ?, ?, ?, ?, ?)",
         )
             .bind(user_id)
@@ -50,14 +51,15 @@ impl Database {
             .bind(from_datetime)
             .bind(until_datetime)
             .bind(reason)
+            .bind(true)
             .execute(&self.pool)
             .await?;
 
         Ok(())
     }
 
-    // Retrieve active suspensions for a specific user
-    pub async fn get_active_suspensions(&self, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
+    // Retrieve all suspensions for a specific user
+    pub async fn get_suspensions(&self, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         let rows = sqlx::query(
@@ -66,6 +68,74 @@ impl Database {
         )
             .bind(&now)
             .bind(&user_id)
+            .fetch_all(&self.pool)
+            .await?;
+
+        let suspensions = rows
+            .into_iter()
+            .map(|row| Suspension {
+                id: row.get("id"),
+                user_id: row.get("user_id"),
+                moderator_id: row.get("moderator_id"),
+                previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
+                from_datetime: row.get("from_datetime"),
+                until_datetime: row.get("until_datetime"),
+                reason: row.get("reason"),
+            })
+            .collect();
+
+        Ok(suspensions)
+    }
+
+    // Retrieve all suspensions for a specific user
+    pub async fn set_suspension_inactive(&self, suspension_id: i64) {
+        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+        sqlx::query("UPDATE suspensions SET ACTIVE = False WHERE id = ?")
+            .bind(suspension_id)
+            .execute(&self.pool)
+            .await
+            .ok();
+    }
+
+    // Retrieve all active suspensions for a specific user
+    pub async fn get_active_suspensions(&self, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
+        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let rows = sqlx::query(
+            "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
+             FROM suspensions WHERE until_datetime > ? AND user_id = ? AND active = TRUE",
+        )
+            .bind(&now)
+            .bind(&user_id)
+            .fetch_all(&self.pool)
+            .await?;
+
+        let suspensions = rows
+            .into_iter()
+            .map(|row| Suspension {
+                id: row.get("id"),
+                user_id: row.get("user_id"),
+                moderator_id: row.get("moderator_id"),
+                previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
+                from_datetime: row.get("from_datetime"),
+                until_datetime: row.get("until_datetime"),
+                reason: row.get("reason"),
+            })
+            .collect();
+
+        Ok(suspensions)
+    }
+
+    // Retrieve all active suspensions
+    pub async fn get_all_active_suspensions(&self) -> Result<Vec<Suspension>, sqlx::Error> {
+        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let rows = sqlx::query(
+            "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
+             FROM suspensions WHERE until_datetime > ? AND active = TRUE",
+        )
+            .bind(&now)
             .fetch_all(&self.pool)
             .await?;
 

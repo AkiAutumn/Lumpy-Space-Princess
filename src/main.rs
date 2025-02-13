@@ -1,7 +1,9 @@
 mod slash_commands;
 mod db;
 mod helper;
+mod config;
 
+use std::sync::Arc;
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
 use crate::db::Database;
@@ -34,6 +36,7 @@ async fn main() {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
 
                 let database = Database::new().await.expect("Failed to initialize database");
+                //tokio::spawn(slash_commands::suspend::monitor_suspensions(ctx.clone(), &ctx.data().database.clone()));
 
                 Ok(Data { database })
             })
