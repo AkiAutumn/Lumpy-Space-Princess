@@ -1,4 +1,6 @@
-[bot]
-
 [roles]
 suspended_role = 1339954767820230699
+
+[channels]
+bans_channel = 1339985167556804639
+ban_logs_channel = 1339985182635196526

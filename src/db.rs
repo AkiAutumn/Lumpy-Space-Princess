@@ -3,7 +3,7 @@ use chrono::Utc;
 use std::error::Error;
 
 pub struct Database {
-    pool: SqlitePool,
+    pub(crate) pool: SqlitePool,
 }
 
 impl Database {

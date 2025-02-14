@@ -22,7 +22,7 @@ pub async fn remove_suspension(
         db.set_suspension_inactive(suspension.id).await;
     }
 
-    ctx.reply(format!(":white_check_mark: {} is no longer suspended!", member.mention())).await?;
+    ctx.reply(format!(":broken_chain: {} is no longer suspended!", member.mention())).await?;
 
     Ok(())
 }

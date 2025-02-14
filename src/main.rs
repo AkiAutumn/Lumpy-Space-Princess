@@ -3,8 +3,11 @@ mod db;
 mod helper;
 mod config;
 
+use std::sync::Arc;
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
+use poise::serenity_prelude::CacheHttp;
+use tokio::task;
 use crate::db::Database;
 use crate::config::Config;
 
@@ -21,7 +24,10 @@ async fn main() {
     dotenv().ok();
 
     // Load the config
-    let config = Config::from_file("config.toml").expect("Unable to access config.toml"); 
+    let config = Config::from_file("config.toml").expect("Unable to access config.toml");
+
+    // Get the database
+    let database = Database::new().await.expect("Failed to initialize database");
 
     // Configure the bot
     let token = std::env::var("DISCORD_TOKEN").expect("No DISCORD_TOKEN in .env");
@@ -32,17 +38,14 @@ async fn main() {
             commands: vec![
                 slash_commands::suspend::suspend(),
                 slash_commands::remove_suspension::remove_suspension(),
-                slash_commands::suspension_history::suspension_history()
+                slash_commands::suspension_history::suspension_history(),
+                slash_commands::start_monitoring::start_monitoring(),
             ],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-
-                let database = Database::new().await.expect("Failed to initialize database");
-                //tokio::spawn(slash_commands::suspend::monitor_suspensions(ctx.clone(), &ctx.data().database.clone()));
-
                 Ok(Data { config, database })
             })
         })
@@ -53,6 +56,6 @@ async fn main() {
         .framework(framework)
         .await
         .unwrap();
-    
+
     client.start().await.unwrap();
 }

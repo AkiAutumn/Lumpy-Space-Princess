@@ -18,7 +18,7 @@ pub async fn suspension_history(
     let mut count = 1;
 
     if suspensions.len() == 0 {
-        message = format!("{} has never been suspended. What a good boy/girl!", user.mention());
+        message = format!(":sparkles: {} has never been suspended. What a good boy/girl!", user.mention());
     }
 
     for suspension in suspensions {
@@ -33,8 +33,12 @@ pub async fn suspension_history(
 
         count += 1;
     }
-
-    ctx.reply(message).await?;
+    
+    ctx.send(
+        poise::CreateReply::default()
+            .content(message)
+            .ephemeral(true)
+    ).await?;
 
     Ok(())
 }

@@ -3,18 +3,19 @@ use std::fs;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub bot: BotConfig,
     pub roles: RoleConfig,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct BotConfig {
-
+    pub channels: ChannelConfig,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct RoleConfig {
     pub suspended_role: u64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChannelConfig {
+    pub bans_channel: u64,
+    pub ban_logs_channel: u64,
 }
 
 impl Config {
