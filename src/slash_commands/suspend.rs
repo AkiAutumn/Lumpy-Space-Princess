@@ -24,7 +24,10 @@ pub async fn suspend(
         let unit = &caps[2]; // Extract time unit ('d', 'w', or 'm')
 
         let now = Local::now().naive_local();
-        let until = match unit {
+        let until = match unit { 
+            "s" => now + Duration::seconds(value),
+            "min" => now + Duration::minutes(value),
+            "h" => now + Duration::hours(value),
             "d" => now + Duration::days(value),
             "w" => now + Duration::weeks(value),
             "m" => now + Duration::days(value * 30), // Approximation of a month (30 days)
@@ -33,10 +36,10 @@ pub async fn suspend(
                 now
             }
         };
-
+        /*
         println!("--- BEGIN OF SUSPENSION ---\r\nUser: {} \r\nModerator: {} \r\nFrom: {} \r\nUntil: {} \r\nReason: {} \r\n--- END OF SUSPENSION ---",
         user.name, ctx.author().name, now.to_string(), until.to_string(), reason.clone().unwrap_or_else(|| String::from("(None)")));
-
+        */
         let guild = ctx.guild_id().unwrap();
         let guild_member = guild.member(&ctx, user.id).await.unwrap();
         let roles: Vec<String> = guild_member.roles.iter().map(|role_id| role_id.get().to_string()).collect();
