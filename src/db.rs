@@ -63,7 +63,7 @@ impl Database {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         let rows = sqlx::query(
-            "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
+            "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active
              FROM suspensions WHERE until_datetime > ? AND user_id = ?",
         )
             .bind(&now)
@@ -120,7 +120,7 @@ impl Database {
                 from_datetime: row.get("from_datetime"),
                 until_datetime: row.get("until_datetime"),
                 reason: row.get("reason"),
-                active: row.get("active"),
+                active: Some(true),
             })
             .collect();
 
@@ -149,7 +149,7 @@ impl Database {
                 from_datetime: row.get("from_datetime"),
                 until_datetime: row.get("until_datetime"),
                 reason: row.get("reason"),
-                active: row.get("active"),
+                active: None,
             })
             .collect();
 
@@ -167,5 +167,5 @@ pub struct Suspension {
     pub from_datetime: String,
     pub until_datetime: String,
     pub reason: Option<String>,
-    pub active: bool,
+    pub active: Option<bool>,
 }

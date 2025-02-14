@@ -6,6 +6,7 @@ use tokio::time::{sleep_until, Instant};
 use sqlx::{SqlitePool, Row};
 use crate::{Context, Error};
 use crate::db::Suspension;
+use crate::helper;
 
 /// Suspends a user for a duration
 #[poise::command(slash_command)]
@@ -41,12 +42,14 @@ pub async fn suspend(
         let roles: Vec<String> = guild_member.roles.iter().map(|role_id| role_id.get().to_string()).collect();
         let db = &ctx.data().database;
 
+        let until_string = &until.format("%Y-%m-%d %H:%M:%S").to_string();
+
         db.log_suspension(
             user.id.get() as i64,
             ctx.author().id.get() as i64,
             &roles,
             &now.format("%Y-%m-%d %H:%M:%S").to_string(),
-            &until.format("%Y-%m-%d %H:%M:%S").to_string(),
+            until_string,
             reason.unwrap_or_else(|| String::from("NULL")).as_str(),
         )
             .await
@@ -58,11 +61,7 @@ pub async fn suspend(
         guild_member.remove_roles(&ctx, &guild_member.roles).await?;
         guild_member.add_role(&ctx, suspended_role).await?;
 
-        ctx.send(
-            poise::CreateReply::default()
-                .content(format!("{} has been suspended until {}!", user.mention(), until))
-                .ephemeral(true)
-        ).await?;
+        ctx.reply(format!(":hammer: {} has been suspended until {}!", user.mention(), helper::date_string_to_discord_timestamp(until_string))).await?;
         
         Ok(())
     } else {
