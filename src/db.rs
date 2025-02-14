@@ -1,5 +1,5 @@
-use sqlx::{SqlitePool, query, Row};
-use chrono::{NaiveDateTime, Utc};
+use sqlx::{SqlitePool, Row};
+use chrono::Utc;
 use std::error::Error;
 
 pub struct Database {
@@ -43,7 +43,7 @@ impl Database {
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO suspensions (user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active)
-             VALUES (?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
             .bind(user_id)
             .bind(moderator_id)
@@ -81,6 +81,7 @@ impl Database {
                 from_datetime: row.get("from_datetime"),
                 until_datetime: row.get("until_datetime"),
                 reason: row.get("reason"),
+                active: row.get("active"),
             })
             .collect();
 
@@ -89,8 +90,6 @@ impl Database {
 
     // Retrieve all suspensions for a specific user
     pub async fn set_suspension_inactive(&self, suspension_id: i64) {
-        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
-
         sqlx::query("UPDATE suspensions SET ACTIVE = False WHERE id = ?")
             .bind(suspension_id)
             .execute(&self.pool)
@@ -121,6 +120,7 @@ impl Database {
                 from_datetime: row.get("from_datetime"),
                 until_datetime: row.get("until_datetime"),
                 reason: row.get("reason"),
+                active: row.get("active"),
             })
             .collect();
 
@@ -149,6 +149,7 @@ impl Database {
                 from_datetime: row.get("from_datetime"),
                 until_datetime: row.get("until_datetime"),
                 reason: row.get("reason"),
+                active: row.get("active"),
             })
             .collect();
 
@@ -166,4 +167,5 @@ pub struct Suspension {
     pub from_datetime: String,
     pub until_datetime: String,
     pub reason: Option<String>,
+    pub active: bool,
 }

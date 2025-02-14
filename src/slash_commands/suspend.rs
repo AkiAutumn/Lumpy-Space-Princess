@@ -2,12 +2,9 @@ use chrono::{Duration, Local, Utc};
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::{Mentionable, RoleId};
 use regex::Regex;
-use serenity::prelude::*;
 use tokio::time::{sleep_until, Instant};
 use sqlx::{SqlitePool, Row};
-use std::sync::Arc;
 use crate::{Context, Error};
-use crate::config::Config;
 use crate::db::Suspension;
 
 /// Suspends a user for a duration
@@ -39,15 +36,15 @@ pub async fn suspend(
         println!("--- BEGIN OF SUSPENSION ---\r\nUser: {} \r\nModerator: {} \r\nFrom: {} \r\nUntil: {} \r\nReason: {} \r\n--- END OF SUSPENSION ---",
         user.name, ctx.author().name, now.to_string(), until.to_string(), reason.clone().unwrap_or_else(|| String::from("(None)")));
 
-        let guild = &ctx.guild().unwrap();
-        let guild_member = &guild.member(&ctx, user.id).await.unwrap();
-        let roles = &guild_member.roles;
+        let guild = ctx.guild_id().unwrap();
+        let guild_member = guild.member(&ctx, user.id).await.unwrap();
+        let roles: Vec<String> = guild_member.roles.iter().map(|role_id| role_id.get().to_string()).collect();
         let db = &ctx.data().database;
 
         db.log_suspension(
             user.id.get() as i64,
             ctx.author().id.get() as i64,
-            &roles.join(","),
+            &roles,
             &now.format("%Y-%m-%d %H:%M:%S").to_string(),
             &until.format("%Y-%m-%d %H:%M:%S").to_string(),
             reason.unwrap_or_else(|| String::from("NULL")).as_str(),
@@ -55,11 +52,11 @@ pub async fn suspend(
             .await
             .expect(format!("Failed to log suspension for {}", &user.name).as_str());
 
-        let config = Config::from_file("config.toml")?;
+        let config = &ctx.data().config;
         let suspended_role = config.roles.suspended_role;
 
-        &guild_member.remove_roles(&ctx, roles);
-        &guild_member.add_role(&ctx, suspended_role);
+        guild_member.remove_roles(&ctx, &guild_member.roles).await?;
+        guild_member.add_role(&ctx, suspended_role).await?;
 
         ctx.send(
             poise::CreateReply::default()
@@ -80,11 +77,11 @@ pub async fn suspend(
     }
 }
 
-pub async fn remove_suspension(ctx: Context<'_>, suspension: &Suspension) -> Result<(), Error> {
+pub async fn restore_roles(ctx: Context<'_>, suspension: &Suspension) -> Result<(), Error> {
 
-    let guild = &ctx.guild().unwrap();
-    let guild_member = &guild.member(&ctx, suspension.user_id as u64).await.unwrap();
-    let config = Config::from_file("config.toml")?;
+    let guild = ctx.guild_id().unwrap();
+    let guild_member = guild.member(&ctx, suspension.user_id as u64).await.unwrap();
+    let config = &ctx.data().config;
     let suspended_role = RoleId::from(config.roles.suspended_role);
     let role_ids = suspension.previous_roles.clone();
     let role_ids_serenity: Vec<RoleId> = role_ids.iter()
@@ -92,8 +89,8 @@ pub async fn remove_suspension(ctx: Context<'_>, suspension: &Suspension) -> Res
         .map(RoleId::from)
         .collect();
 
-    &guild_member.remove_role(&ctx, suspended_role);
-    &guild_member.add_roles(&ctx, &*role_ids_serenity);
+    guild_member.remove_role(&ctx, suspended_role).await?;
+    guild_member.add_roles(&ctx, &*role_ids_serenity).await?;
 
     Ok(())
 }
@@ -123,7 +120,7 @@ pub(crate) async fn monitor_suspensions(ctx: Context<'_>, db: SqlitePool) {
                 .unwrap_or_else(|_| vec![]);
 
             for row in expired_suspensions {
-                let suspension_id: i64 = row.get("id");
+
                 let suspension = Suspension {
                         id: row.get("id"),
                         user_id: row.get("user_id"),
@@ -132,13 +129,15 @@ pub(crate) async fn monitor_suspensions(ctx: Context<'_>, db: SqlitePool) {
                         from_datetime: row.get("from_datetime"),
                         until_datetime: row.get("until_datetime"),
                         reason: row.get("reason"),
+                        active: row.get("active"),
                     };
 
                 // Try to restore roles
-                remove_suspension(**&ctx, &suspension).await.expect(format!("Unable to remove suspension for user id {}", suspension.user_id).as_str());
+                restore_roles(ctx, &suspension).await.expect(format!("Unable to remove suspension for user id {}", suspension.user_id).as_str());
 
                 // Set suspension inactive
-                db.set();
+                let db = &ctx.data().database;
+                db.set_suspension_inactive(suspension.id).await;
 
                 println!("Suspension has ended for user id {}", suspension.user_id);
             }
