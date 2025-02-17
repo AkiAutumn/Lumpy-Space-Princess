@@ -17,16 +17,14 @@ pub async fn suspend(
     #[description = "Reason"] reason: Option<String>,
 ) -> Result<(), Error> {
     
-    let re = Regex::new(r"^(\d+)([dwm])$").unwrap();
+    let re = Regex::new(r"^(\d+)([hdwm])$").unwrap();
     
     if let Some(caps) = re.captures(duration.as_str()) {
         let value: i64 = caps[1].parse().unwrap(); // Extract number
         let unit = &caps[2]; // Extract time unit ('d', 'w', or 'm')
 
         let now = Local::now().naive_local();
-        let until = match unit { 
-            "s" => now + Duration::seconds(value),
-            "min" => now + Duration::minutes(value),
+        let until = match unit {
             "h" => now + Duration::hours(value),
             "d" => now + Duration::days(value),
             "w" => now + Duration::weeks(value),
