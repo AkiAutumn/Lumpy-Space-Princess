@@ -17,12 +17,16 @@ pub async fn remove_suspension(
 
     let member = guild_id.member(ctx, user.id).await?;
 
-    for suspension in suspensions {
+    for suspension in &suspensions {
         restore_roles(ctx, &suspension).await?;
         db.set_suspension_inactive(suspension.id).await;
     }
 
-    ctx.reply(format!(":broken_chain: {} is no longer suspended!", member.mention())).await?;
+    if suspensions.len() > 0 {
+        ctx.reply(format!(":broken_chain: {} is no longer suspended!", member.mention())).await?;
+    } else {
+        ctx.reply(format!(":sparkles: {} has no active suspensions!", member.mention())).await?;
+    }
 
     Ok(())
 }

@@ -1,9 +1,8 @@
 use chrono::{Duration, Local, Utc};
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{Mentionable, RoleId};
+use poise::serenity_prelude::{CreateMessage, Mentionable, RoleId};
 use regex::Regex;
-use tokio::time::{sleep_until, Instant};
-use sqlx::{SqlitePool, Row};
+use sqlx::Row;
 use crate::{Context, Error};
 use crate::db::Suspension;
 use crate::helper;
@@ -17,7 +16,7 @@ pub async fn suspend(
     #[description = "Reason"] reason: Option<String>,
 ) -> Result<(), Error> {
     
-    let re = Regex::new(r"^(\d+)([hdwm])$").unwrap();
+    let re = Regex::new(r"^(\d+)([shdwm])$").unwrap();
     
     if let Some(caps) = re.captures(duration.as_str()) {
         let value: i64 = caps[1].parse().unwrap(); // Extract number
@@ -25,6 +24,7 @@ pub async fn suspend(
 
         let now = Local::now().naive_local();
         let until = match unit {
+            "s" => now + Duration::seconds(value),
             "h" => now + Duration::hours(value),
             "d" => now + Duration::days(value),
             "w" => now + Duration::weeks(value),
@@ -34,10 +34,7 @@ pub async fn suspend(
                 now
             }
         };
-        /*
-        println!("--- BEGIN OF SUSPENSION ---\r\nUser: {} \r\nModerator: {} \r\nFrom: {} \r\nUntil: {} \r\nReason: {} \r\n--- END OF SUSPENSION ---",
-        user.name, ctx.author().name, now.to_string(), until.to_string(), reason.clone().unwrap_or_else(|| String::from("(None)")));
-        */
+
         let guild = ctx.guild_id().unwrap();
         let guild_member = guild.member(&ctx, user.id).await.unwrap();
         let roles: Vec<String> = guild_member.roles.iter().map(|role_id| role_id.get().to_string()).collect();
@@ -51,7 +48,7 @@ pub async fn suspend(
             &roles,
             &now.format("%Y-%m-%d %H:%M:%S").to_string(),
             until_string,
-            reason.unwrap_or_else(|| String::from("NULL")).as_str(),
+            reason.clone().unwrap_or_else(|| String::from("NULL")).as_str(),
         )
             .await
             .expect(format!("Failed to log suspension for {}", &user.name).as_str());
@@ -61,7 +58,18 @@ pub async fn suspend(
 
         guild_member.remove_roles(&ctx, &guild_member.roles).await?;
         guild_member.add_role(&ctx, suspended_role).await?;
-
+        
+        /*
+        if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == config.channels.bans_channel}) {
+            tuple.1.send_message(&ctx.http(), CreateMessage::default()
+                .content(
+                    format!("Name:{}\r\nReason:{}\r\nUntil:{}", user.mention(), reason.unwrap_or_else(|| String::from("None")), helper::date_string_to_discord_timestamp(until_string))
+                )
+            ).await.unwrap();
+        } else {
+            println!("Unable to find bans channel");
+        }
+        */
         ctx.reply(format!(":hammer: {} has been suspended until {}!", user.mention(), helper::date_string_to_discord_timestamp(until_string))).await?;
         
         Ok(())
