@@ -38,8 +38,8 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
         println!("Checking suspensions...");
     
         // Check expired suspensions after waking up
-        let expired_suspensions = sqlx::query("SELECT user_id FROM suspensions WHERE until <= ? AND active = TRUE")
-            .bind(Utc::now())
+        let expired_suspensions = sqlx::query("SELECT * FROM suspensions WHERE until_datetime <= ? AND active = TRUE")
+            .bind(Utc::now().format("%Y-%m-%d %H:%M:%S").to_string())
             .fetch_all(pool)
             .await
             .unwrap_or_else(|_| vec![]);
@@ -63,7 +63,7 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
             let db = &ctx.data().database;
             db.set_suspension_inactive(suspension.id).await;
 
-            println!("Suspension has ended for user id {}", suspension.user_id);
+            println!("Suspension ({}) has ended for user id {}", suspension.id, suspension.user_id);
 
             /*
             let config = &ctx.data().config;
@@ -81,6 +81,7 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
              */
         }
 
-        sleep_until(Instant::now() + std::time::Duration::from_secs(900)).await;
+        //sleep_until(Instant::now() + std::time::Duration::from_secs(900)).await;
+        sleep_until(Instant::now() + std::time::Duration::from_secs(30)).await;
     }
 }

@@ -16,6 +16,12 @@ pub async fn suspend(
     #[description = "Reason"] reason: Option<String>,
 ) -> Result<(), Error> {
     
+    let author_member = &ctx.author_member().await.unwrap();
+    
+    if !helper::has_user_suspension_permission(&ctx, author_member) {
+        return Ok(());
+    }
+    
     let re = Regex::new(r"^(\d+)([shdwm])$").unwrap();
     
     if let Some(caps) = re.captures(duration.as_str()) {
@@ -48,7 +54,7 @@ pub async fn suspend(
             &roles,
             &now.format("%Y-%m-%d %H:%M:%S").to_string(),
             until_string,
-            reason.clone().unwrap_or_else(|| String::from("NULL")).as_str(),
+            reason.clone().unwrap_or_else(|| String::from("(Not given)")).as_str(),
         )
             .await
             .expect(format!("Failed to log suspension for {}", &user.name).as_str());
@@ -58,7 +64,7 @@ pub async fn suspend(
 
         guild_member.remove_roles(&ctx, &guild_member.roles).await?;
         guild_member.add_role(&ctx, suspended_role).await?;
-        
+
         /*
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == config.channels.bans_channel}) {
             tuple.1.send_message(&ctx.http(), CreateMessage::default()

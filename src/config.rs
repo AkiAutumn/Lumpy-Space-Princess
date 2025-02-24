@@ -10,6 +10,7 @@ pub struct Config {
 #[derive(Debug, Deserialize)]
 pub struct RoleConfig {
     pub suspended_role: u64,
+    pub suspension_permitted_roles: Vec<u64>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -10,6 +10,12 @@ pub async fn suspension_history(
     #[description = "Selected user"] user: serenity::User,
 ) -> Result<(), Error> {
 
+    let author_member = &ctx.author_member().await.unwrap();
+
+    if !helper::has_user_suspension_permission(&ctx, author_member) {
+        return Ok(());
+    }
+
     let db = &ctx.data().database;
 
     let suspensions = db.get_suspensions(user.id.get() as i64).await?;

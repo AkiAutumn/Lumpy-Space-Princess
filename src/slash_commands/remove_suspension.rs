@@ -1,6 +1,6 @@
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::Mentionable;
-use crate::{Context, Error};
+use crate::{helper, Context, Error};
 use crate::slash_commands::suspend::restore_roles;
 
 /// Removes a users active suspension
@@ -9,6 +9,13 @@ pub async fn remove_suspension(
     ctx: Context<'_>,
     #[description = "Selected user"] user: serenity::User,
 ) -> Result<(), Error> {
+
+    let author_member = &ctx.author_member().await.unwrap();
+
+    if !helper::has_user_suspension_permission(&ctx, author_member) {
+        return Ok(());
+    }
+    
     let db = &ctx.data().database;
     let suspensions = db.get_active_suspensions(user.id.get() as i64).await?;
 

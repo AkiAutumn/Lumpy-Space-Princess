@@ -90,7 +90,7 @@ impl Database {
 
     // Retrieve all suspensions for a specific user
     pub async fn set_suspension_inactive(&self, suspension_id: i64) {
-        sqlx::query("UPDATE suspensions SET ACTIVE = False WHERE id = ?")
+        sqlx::query("UPDATE suspensions SET ACTIVE = FALSE WHERE id = ?")
             .bind(suspension_id)
             .execute(&self.pool)
             .await
