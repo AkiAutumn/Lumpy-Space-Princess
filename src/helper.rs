@@ -20,7 +20,7 @@ pub async fn has_user_suspension_permission(ctx: &Context<'_>, member: &Cow<'_, 
 
         ctx.send(
             poise::CreateReply::default()
-                .content(":x: You don't have permission for that!")
+                .content(":x: You don't have permission to do that!")
                 .ephemeral(true)
         ).await.expect("Failed to send no-permission-reply");
         

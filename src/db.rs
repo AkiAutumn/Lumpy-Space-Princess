@@ -2,6 +2,7 @@ use sqlx::{SqlitePool, Row};
 use chrono::Utc;
 use std::error::Error;
 
+#[derive(Clone)]
 pub struct Database {
     pub(crate) pool: SqlitePool,
 }

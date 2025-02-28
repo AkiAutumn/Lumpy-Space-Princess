@@ -5,8 +5,10 @@ mod config;
 
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
+use poise::serenity_prelude::CreateMessage;
 use crate::db::Database;
 use crate::config::Config;
+use crate::slash_commands::start_monitoring::start_monitoring;
 
 struct Data {
     pub config: Config,
@@ -36,15 +38,20 @@ async fn main() {
                 slash_commands::suspend::suspend(),
                 slash_commands::remove_suspension::remove_suspension(),
                 slash_commands::suspension_history::suspension_history(),
-                slash_commands::start_monitoring::start_monitoring(),
             ],
             ..Default::default()
         })
-        .setup(|ctx, _ready, framework| {
-            Box::pin(async move {
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data { config, database })
-            })
+        .setup({
+            // Clone the config and database because we need them later
+            let config = config.clone();
+            let database = database.clone();
+            
+            move |ctx, _ready, framework| {
+                Box::pin(async move {
+                    poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                    Ok(Data { config, database })
+                })
+            }
         })
         .build();
 
@@ -55,4 +62,30 @@ async fn main() {
         .unwrap();
 
     client.start().await.unwrap();
+    
+    let guilds = client.http.get_guilds(None, None).await.unwrap();
+    println!("Connected to {} guilds:\r\n{}", 
+             guilds.len(), 
+             guilds.iter()
+                 .map(|guild| guild.name.clone())
+                 .collect::<Vec<_>>()
+                 .join(", "));
+    
+    // Send a message into each guild's log channel
+    for guild in client.cache.guilds() {
+
+        let guild_id = guild.get();
+        let log_channel_id = &config.guilds.get(&guild_id.to_string()).unwrap().channels.log;
+
+        if let Some(tuple) = guild.channels(client.http.as_ref()).await.unwrap().iter().find(|tuple| {&tuple.0.get() == log_channel_id}) {
+            tuple.1.send_message(&client.http, CreateMessage::default().content(":electric_plug: Connected!")).await.unwrap();
+        } else {
+            let guild_name = guild.name(client.cache.as_ref()).unwrap();
+            println!("Unable to find log channel for guild {} ({})", guild_name, guild_id);
+        }
+    }
+
+    // Start never ending monitoring task
+    // Might have to export this to another thread if anything needs to be executed after this
+    start_monitoring(&database.pool, &client.http, &config, &database).await;
 }

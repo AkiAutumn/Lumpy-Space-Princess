@@ -17,16 +17,16 @@ pub async fn remove_suspension(
     }
     
     let db = &ctx.data().database;
-    let guild_id = ctx.guild_id().unwrap().get();
+    let guild = ctx.guild_id().unwrap();
+    let guild_id = guild.get();
     let suspensions = db.get_active_suspensions(guild_id as i64, user.id.get() as i64).await?;
-
-    // Extract the Guild ID instead of keeping `CacheRef`
-    let guild_id = ctx.guild_id().unwrap();
-
-    let member = guild_id.member(ctx, user.id).await?;
+    let member = guild.member(ctx, user.id).await?;
+    let config = &ctx.data().config;
+    let suspended_role_id = config.guilds.get(&guild_id.to_string()).unwrap().roles.suspended;
 
     for suspension in &suspensions {
-        restore_roles(ctx, &suspension).await?;
+        // Try to restore roles
+        restore_roles(ctx.http(), guild, suspended_role_id, &suspension).await.expect(format!("Unable to restore roles for user id {}", suspension.user_id).as_str());
         db.set_suspension_inactive(suspension.id).await;
     }
 

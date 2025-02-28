@@ -1,6 +1,6 @@
 use chrono::{Duration, Local};
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{CreateMessage, Mentionable, RoleId};
+use poise::serenity_prelude::{Cache, CacheHttp, CreateMessage, Guild, GuildId, Http, Mentionable, RoleId};
 use regex::Regex;
 use crate::{Context, Error};
 use crate::db::Suspension;
@@ -122,13 +122,10 @@ pub async fn suspend(
     }
 }
 
-pub async fn restore_roles(ctx: Context<'_>, suspension: &Suspension) -> Result<(), Error> {
+pub async fn restore_roles(http: &Http, guild: GuildId, suspended_role_id: u64, suspension: &Suspension) -> Result<(), Error> {
 
-    let guild = ctx.guild_id().unwrap();
-    let guild_member = guild.member(&ctx, suspension.user_id as u64).await.unwrap();
-    let config = &ctx.data().config;
-    let guild_id = &ctx.guild_id().unwrap().get();
-    let suspended_role_id = config.guilds.get(&guild_id.to_string()).unwrap().roles.suspended;
+    let guild_member = guild.member(&http, suspension.user_id as u64).await.unwrap();
+    let guild_id = guild.get();
     let suspended_role = RoleId::from(suspended_role_id);
     let role_ids = suspension.previous_roles.clone();
     let role_ids_serenity: Vec<RoleId> = role_ids.iter()
@@ -136,8 +133,8 @@ pub async fn restore_roles(ctx: Context<'_>, suspension: &Suspension) -> Result<
         .map(RoleId::from)
         .collect();
 
-    guild_member.remove_role(&ctx, suspended_role).await?;
-    guild_member.add_roles(&ctx, &*role_ids_serenity).await?;
+    guild_member.remove_role(&http, suspended_role).await?;
+    guild_member.add_roles(&http, &*role_ids_serenity).await?;
 
     Ok(())
 }
