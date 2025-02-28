@@ -77,7 +77,7 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
                 let embed = serenity::CreateEmbed::default()
                     .title("Suspension expired")
                     .color(serenity::Colour::ROSEWATER)
-                    .field("User", member.mention().to_string(), true)
+                    .field("User", member.mention().to_string(), false)
                     .footer(CreateEmbedFooter::new(format!("ID: {}", suspension.id)));
 
                 // Send the embed

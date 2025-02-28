@@ -92,8 +92,9 @@ pub async fn suspend(
             let embed = serenity::CreateEmbed::default()
                 .title("Suspension Log")
                 .color(serenity::Colour::DARK_RED)
-                .field("User", user.mention().to_string(), true)
-                .field("Moderator", author_member.mention().to_string(), true)
+                .field("User", user.mention().to_string(), false)
+                .field("Issued by", author_member.mention().to_string(), false)
+                .field("Until", helper::date_string_to_discord_timestamp(until_string), false)
                 .field("Reason", &reason_string, false);
             
             // Send the embed
