@@ -19,6 +19,7 @@ pub async fn suspend(
     
     // Check if author has suspension permission
     if !helper::has_user_suspension_permission(&ctx, author_member) {
+        let _ = &ctx.defer_or_broadcast().await;
         return Ok(());
     }
     
@@ -89,7 +90,7 @@ pub async fn suspend(
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
 
             let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
-            
+
             // Create an embed
             let embed = serenity::CreateEmbed::default()
                 .title("Suspension Log")

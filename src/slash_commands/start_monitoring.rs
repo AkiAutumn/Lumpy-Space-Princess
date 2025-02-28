@@ -3,7 +3,7 @@ use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::{CreateEmbedFooter, Mentionable, UserId};
 use sqlx::{Row};
 use tokio::time::{sleep_until, Instant};
-use crate::{Context, Error};
+use crate::{helper, Context, Error};
 use crate::db::Suspension;
 use crate::slash_commands::suspend::{restore_roles};
 
@@ -11,6 +11,13 @@ static mut MONITORING_ACTIVE: bool = false; // Global bool to store the flag
 
 #[poise::command(slash_command)]
 pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
+
+    let author_member = &ctx.author_member().await.unwrap();
+
+    if !helper::has_user_suspension_permission(&ctx, author_member) {
+        let _ = &ctx.defer_or_broadcast().await;
+        return Ok(());
+    }
     
     unsafe {
         
