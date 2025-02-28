@@ -1,6 +1,6 @@
-use chrono::{Duration, Local, Utc};
+use chrono::{Duration, Local};
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{CreateEmbedFooter, CreateMessage, Mentionable, RoleId};
+use poise::serenity_prelude::{CreateMessage, Mentionable, RoleId};
 use regex::Regex;
 use sqlx::Row;
 use crate::{Context, Error};

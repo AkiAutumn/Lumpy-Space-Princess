@@ -1,6 +1,5 @@
 use chrono::Utc;
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::colours::branding::WHITE;
 use poise::serenity_prelude::{CreateEmbedFooter, Mentionable, UserId};
 use sqlx::{Row};
 use tokio::time::{sleep_until, Instant};

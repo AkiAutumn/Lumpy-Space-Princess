@@ -5,7 +5,6 @@ mod config;
 
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
-use poise::serenity_prelude::CacheHttp;
 use crate::db::Database;
 use crate::config::Config;
 
