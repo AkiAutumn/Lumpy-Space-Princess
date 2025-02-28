@@ -3,16 +3,14 @@ mod db;
 mod helper;
 mod config;
 
-use std::sync::Arc;
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
 use poise::serenity_prelude::CacheHttp;
-use tokio::task;
 use crate::db::Database;
 use crate::config::Config;
 
 struct Data {
-    pub config: config::Config,
+    pub config: Config,
     pub database: Database
 } // User data, which is stored and accessible in all command invocations
 type Error = Box<dyn std::error::Error + Send + Sync>;

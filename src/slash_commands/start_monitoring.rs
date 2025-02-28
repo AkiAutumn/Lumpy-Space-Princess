@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
 use chrono::Utc;
-use poise::serenity_prelude::{CreateMessage, Mentionable, UserId};
+use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::colours::branding::WHITE;
+use poise::serenity_prelude::{CreateEmbedFooter, Mentionable, UserId};
 use sqlx::{Row};
 use tokio::time::{sleep_until, Instant};
-use crate::{helper, Context, Error};
+use crate::{Context, Error};
 use crate::db::Suspension;
 use crate::slash_commands::suspend::{restore_roles};
 
@@ -32,10 +33,12 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
     ctx.reply(":mag: Started monitoring...").await?;
 
     let pool = &ctx.clone().data().database.pool;
+    let guild = ctx.guild_id().unwrap();
+    let guild_id = guild.get();
+    let config = &ctx.data().config;
+    let log_channel_id = config.guilds.get(&guild_id).unwrap().channels.log;
 
     loop {
-
-        println!("Checking suspensions...");
     
         // Check expired suspensions after waking up
         let expired_suspensions = sqlx::query("SELECT * FROM suspensions WHERE until_datetime <= ? AND active = TRUE")
@@ -65,23 +68,26 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
 
             println!("Suspension ({}) has ended for user id {}", suspension.id, suspension.user_id);
 
-            /*
-            let config = &ctx.data().config;
-            let guild = &ctx.guild_id().unwrap();
-            
-            if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == config.channels.bans_channel}) {
-                tuple.1.send_message(&ctx.http(), CreateMessage::default()
-                    .content(
-                        format!("{}'s suspension ended!", guild.member(&ctx.http(), suspension.user_id).await.unwrap().mention())
-                    )
-                ).await.unwrap();
-            } else {
-                println!("Unable to find bans channel");
-            }
-             */
-        }
+            if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
+                
+                let member_id = UserId::new(suspension.user_id as u64);
+                let member = guild.member(&ctx, member_id).await?;
 
-        //sleep_until(Instant::now() + std::time::Duration::from_secs(900)).await;
-        sleep_until(Instant::now() + std::time::Duration::from_secs(30)).await;
+                // Create an embed
+                let embed = serenity::CreateEmbed::default()
+                    .title("Suspension expired")
+                    .color(serenity::Colour::ROSEWATER)
+                    .field("User", member.mention().to_string(), true)
+                    .footer(CreateEmbedFooter::new(format!("ID: {}", suspension.id)));
+
+                // Send the embed
+                tuple.1.send_message(&ctx, serenity::CreateMessage::default().embed(embed)).await?;
+            } else {
+                let guild_name = &ctx.guild_id().unwrap().name(&ctx).unwrap();
+                println!("Unable to find log channel for guild {} ({})", guild_name, guild_id);
+            }
+        }
+        
+        sleep_until(Instant::now() + std::time::Duration::from_secs(60)).await;
     }
 }

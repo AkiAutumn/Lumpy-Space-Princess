@@ -1,6 +1,6 @@
 use chrono::{Duration, Local, Utc};
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{CreateMessage, Mentionable, RoleId};
+use poise::serenity_prelude::{CreateEmbedFooter, CreateMessage, Mentionable, RoleId};
 use regex::Regex;
 use sqlx::Row;
 use crate::{Context, Error};
@@ -47,6 +47,7 @@ pub async fn suspend(
         let db = &ctx.data().database;
 
         let until_string = &until.format("%Y-%m-%d %H:%M:%S").to_string();
+        let reason_string = reason.unwrap_or_else(|| String::from("Not specified"));
 
         db.log_suspension(
             user.id.get() as i64,
@@ -54,28 +55,38 @@ pub async fn suspend(
             &roles,
             &now.format("%Y-%m-%d %H:%M:%S").to_string(),
             until_string,
-            reason.clone().unwrap_or_else(|| String::from("(Not given)")).as_str(),
+            &reason_string,
         )
             .await
             .expect(format!("Failed to log suspension for {}", &user.name).as_str());
 
         let config = &ctx.data().config;
-        let suspended_role = config.roles.suspended_role;
+        let guild_id = &ctx.guild_id().unwrap().get();
+        let suspended_role = config.guilds.get(guild_id).unwrap().roles.suspended;
 
         guild_member.remove_roles(&ctx, &guild_member.roles).await?;
         guild_member.add_role(&ctx, suspended_role).await?;
 
-        /*
-        if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == config.channels.bans_channel}) {
-            tuple.1.send_message(&ctx.http(), CreateMessage::default()
-                .content(
-                    format!("Name:{}\r\nReason:{}\r\nUntil:{}", user.mention(), reason.unwrap_or_else(|| String::from("None")), helper::date_string_to_discord_timestamp(until_string))
-                )
-            ).await.unwrap();
+        // Try to obtain the guilds log channel
+        let log_channel_id = config.guilds.get(guild_id).unwrap().channels.log;
+        
+        if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
+            
+            // Create an embed
+            let embed = serenity::CreateEmbed::default()
+                .title("Suspension Log")
+                .color(serenity::Colour::DARK_RED)
+                .field("User", user.mention().to_string(), true)
+                .field("Moderator", author_member.mention().to_string(), true)
+                .field("Reason", &reason_string, false);
+            
+            // Send the embed
+            tuple.1.send_message(&ctx, CreateMessage::default().embed(embed)).await?;
         } else {
-            println!("Unable to find bans channel");
+            let guild_name = &ctx.guild_id().unwrap().name(&ctx).unwrap();
+            println!("Unable to find log channel for guild {} ({})", guild_name, guild_id);
         }
-        */
+        
         ctx.reply(format!(":hammer: {} has been suspended until {}!", user.mention(), helper::date_string_to_discord_timestamp(until_string))).await?;
         
         Ok(())
@@ -96,7 +107,9 @@ pub async fn restore_roles(ctx: Context<'_>, suspension: &Suspension) -> Result<
     let guild = ctx.guild_id().unwrap();
     let guild_member = guild.member(&ctx, suspension.user_id as u64).await.unwrap();
     let config = &ctx.data().config;
-    let suspended_role = RoleId::from(config.roles.suspended_role);
+    let guild_id = &ctx.guild_id().unwrap().get();
+    let suspended_role_id = config.guilds.get(guild_id).unwrap().roles.suspended;
+    let suspended_role = RoleId::from(suspended_role_id);
     let role_ids = suspension.previous_roles.clone();
     let role_ids_serenity: Vec<RoleId> = role_ids.iter()
         .filter_map(|id| id.parse::<u64>().ok())
