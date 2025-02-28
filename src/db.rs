@@ -40,7 +40,7 @@ impl Database {
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO suspensions (guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
             .bind(suspension.guild_id)
             .bind(suspension.user_id)
