@@ -51,25 +51,19 @@ impl Database {
     // Log a suspension to the database
     pub async fn log_suspension(
         &self,
-        guild_id: i64,
-        user_id: i64,
-        moderator_id: i64,
-        previous_roles: &[String],
-        from_datetime: &str,
-        until_datetime: &str,
-        reason: &str,
+        suspension: Suspension,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
             "INSERT INTO suspensions (guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active)
              VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
-            .bind(guild_id)
-            .bind(user_id)
-            .bind(moderator_id)
-            .bind(previous_roles.join(",")) // Convert Vec<String> to a single comma-separated string
-            .bind(from_datetime)
-            .bind(until_datetime)
-            .bind(reason)
+            .bind(suspension.guild_id)
+            .bind(suspension.user_id)
+            .bind(suspension.moderator_id)
+            .bind(suspension.previous_roles.join(",")) // Convert Vec<String> to a single comma-separated string
+            .bind(suspension.from_datetime)
+            .bind(suspension.until_datetime)
+            .bind(suspension.reason)
             .bind(true)
             .execute(&self.pool)
             .await?;
@@ -144,37 +138,6 @@ impl Database {
                 until_datetime: row.get("until_datetime"),
                 reason: row.get("reason"),
                 active: Some(true),
-            })
-            .collect();
-
-        Ok(suspensions)
-    }
-
-    // Retrieve all active suspensions
-    pub async fn get_all_active_suspensions(&self, guild_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
-        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
-
-        let rows = sqlx::query(
-            "SELECT id, guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
-             FROM suspensions WHERE until_datetime > ? AND guild_id = ? AND active = TRUE",
-        )
-            .bind(&now)
-            .bind(guild_id)
-            .fetch_all(&self.pool)
-            .await?;
-
-        let suspensions = rows
-            .into_iter()
-            .map(|row| Suspension {
-                id: row.get("id"),
-                guild_id: row.get("guild_id"),
-                user_id: row.get("user_id"),
-                moderator_id: row.get("moderator_id"),
-                previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
-                from_datetime: row.get("from_datetime"),
-                until_datetime: row.get("until_datetime"),
-                reason: row.get("reason"),
-                active: None,
             })
             .collect();
 

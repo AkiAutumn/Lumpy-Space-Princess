@@ -2,7 +2,6 @@ use chrono::{Duration, Local};
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::{CreateMessage, Mentionable, RoleId};
 use regex::Regex;
-use sqlx::Row;
 use crate::{Context, Error};
 use crate::db::Suspension;
 use crate::helper;
@@ -61,19 +60,21 @@ pub async fn suspend(
         let db = &ctx.data().database;
 
         let until_string = &until.format("%Y-%m-%d %H:%M:%S").to_string();
-        let reason_string = reason.unwrap_or_else(|| String::from("Not specified"));
+        let reason_string = reason.clone().unwrap_or_else(|| String::from("Not specified"));
+        
+        let suspension = Suspension {
+            id: 0,
+            guild_id: guild.get() as i64,
+            user_id: user.id.get() as i64,
+            moderator_id: ctx.author().id.get() as i64,
+            previous_roles: roles,
+            from_datetime: now.format("%Y-%m-%d %H:%M:%S").to_string(),
+            until_datetime: until_string.to_string(),
+            reason: reason,
+            active: None,
+        };
 
-        db.log_suspension(
-            guild.get() as i64,
-            user.id.get() as i64,
-            ctx.author().id.get() as i64,
-            &roles,
-            &now.format("%Y-%m-%d %H:%M:%S").to_string(),
-            until_string,
-            &reason_string,
-        )
-            .await
-            .expect(format!("Failed to log suspension for {}", &user.name).as_str());
+        db.log_suspension(suspension).await.expect(format!("Failed to log suspension for {}", &user.name).as_str());
 
         let config = &ctx.data().config;
         let guild_id = &ctx.guild_id().unwrap().get();
