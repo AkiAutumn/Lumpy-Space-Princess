@@ -5,7 +5,6 @@ mod config;
 
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
-use poise::serenity_prelude::CreateMessage;
 use crate::db::Database;
 use crate::config::Config;
 use crate::slash_commands::start_monitoring::start_monitoring;
@@ -19,6 +18,7 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[tokio::main]
 async fn main() {
+    
     // Load the environment variables from the .env file
     dotenv().ok();
 
@@ -32,6 +32,7 @@ async fn main() {
     let token = std::env::var("DISCORD_TOKEN").expect("No DISCORD_TOKEN in .env");
     let intents = serenity::GatewayIntents::non_privileged();
 
+    // Build the framework
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
@@ -54,38 +55,28 @@ async fn main() {
             }
         })
         .build();
-
-    // Run the bot
+    
+    // Build the client
     let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
         .await
         .unwrap();
-
-    client.start().await.unwrap();
     
+    // Print active guilds
     let guilds = client.http.get_guilds(None, None).await.unwrap();
-    println!("Connected to {} guilds:\r\n{}", 
+    println!("Connected to {} guild(s):\r\n{}", 
              guilds.len(), 
              guilds.iter()
                  .map(|guild| guild.name.clone())
                  .collect::<Vec<_>>()
                  .join(", "));
     
-    // Send a message into each guild's log channel
-    for guild in client.cache.guilds() {
-
-        let guild_id = guild.get();
-        let log_channel_id = &config.guilds.get(&guild_id.to_string()).unwrap().channels.log;
-
-        if let Some(tuple) = guild.channels(client.http.as_ref()).await.unwrap().iter().find(|tuple| {&tuple.0.get() == log_channel_id}) {
-            tuple.1.send_message(&client.http, CreateMessage::default().content(":electric_plug: Connected!")).await.unwrap();
-        } else {
-            let guild_name = guild.name(client.cache.as_ref()).unwrap();
-            println!("Unable to find log channel for guild {} ({})", guild_name, guild_id);
-        }
-    }
-
-    // Start never ending monitoring task
-    // Might have to export this to another thread if anything needs to be executed after this
-    start_monitoring(&database.pool, &client.http, &config, &database).await;
+    // Spawn monitoring task
+    let http = client.http.clone();
+    let _ = tokio::spawn( async move{
+        start_monitoring(&database.pool, &http, &config, &database).await;
+    });
+    
+    // Run the bot
+    client.start().await.unwrap();
 }
