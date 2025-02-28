@@ -17,8 +17,8 @@ pub async fn suspension_history(
     }
 
     let db = &ctx.data().database;
-
-    let suspensions = db.get_suspensions(user.id.get() as i64).await?;
+    let guild_id = ctx.guild_id().unwrap().get();
+    let suspensions = db.get_suspensions(guild_id as i64, user.id.get() as i64).await?;
 
     let mut message = format!("## :open_file_folder: Suspension history for {}\r\n", user.mention());
     let mut count = 1;

@@ -50,6 +50,7 @@ pub async fn suspend(
         let reason_string = reason.unwrap_or_else(|| String::from("Not specified"));
 
         db.log_suspension(
+            guild.get() as i64,
             user.id.get() as i64,
             ctx.author().id.get() as i64,
             &roles,

@@ -16,6 +16,7 @@ impl Database {
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS suspensions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                guild_id INTEGER NOT NULL,
                 user_id INTEGER NOT NULL,
                 moderator_id INTEGER NOT NULL,
                 previous_roles TEXT NOT NULL,
@@ -34,6 +35,7 @@ impl Database {
     // Log a suspension to the database
     pub async fn log_suspension(
         &self,
+        guild_id: i64,
         user_id: i64,
         moderator_id: i64,
         previous_roles: &[String],
@@ -42,9 +44,10 @@ impl Database {
         reason: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO suspensions (user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active)
+            "INSERT INTO suspensions (guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active)
              VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
+            .bind(guild_id)
             .bind(user_id)
             .bind(moderator_id)
             .bind(previous_roles.join(",")) // Convert Vec<String> to a single comma-separated string
@@ -59,14 +62,15 @@ impl Database {
     }
 
     // Retrieve all suspensions for a specific user
-    pub async fn get_suspensions(&self, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
+    pub async fn get_suspensions(&self, guild_id: i64, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         let rows = sqlx::query(
-            "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active
-             FROM suspensions WHERE until_datetime > ? AND user_id = ?",
+            "SELECT id, guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active
+             FROM suspensions WHERE until_datetime > ? AND guild_id = ? AND user_id = ?",
         )
             .bind(&now)
+            .bind(guild_id)
             .bind(&user_id)
             .fetch_all(&self.pool)
             .await?;
@@ -75,6 +79,7 @@ impl Database {
             .into_iter()
             .map(|row| Suspension {
                 id: row.get("id"),
+                guild_id: row.get("guild_id"),
                 user_id: row.get("user_id"),
                 moderator_id: row.get("moderator_id"),
                 previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
@@ -98,14 +103,15 @@ impl Database {
     }
 
     // Retrieve all active suspensions for a specific user
-    pub async fn get_active_suspensions(&self, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
+    pub async fn get_active_suspensions(&self, guild_id: i64, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         let rows = sqlx::query(
-            "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
-             FROM suspensions WHERE until_datetime > ? AND user_id = ? AND active = TRUE",
+            "SELECT id, guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
+             FROM suspensions WHERE until_datetime > ? AND guild_id = ? AND user_id = ? AND active = TRUE",
         )
             .bind(&now)
+            .bind(guild_id)
             .bind(&user_id)
             .fetch_all(&self.pool)
             .await?;
@@ -114,6 +120,7 @@ impl Database {
             .into_iter()
             .map(|row| Suspension {
                 id: row.get("id"),
+                guild_id: row.get("guild_id"),
                 user_id: row.get("user_id"),
                 moderator_id: row.get("moderator_id"),
                 previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
@@ -128,14 +135,15 @@ impl Database {
     }
 
     // Retrieve all active suspensions
-    pub async fn get_all_active_suspensions(&self) -> Result<Vec<Suspension>, sqlx::Error> {
+    pub async fn get_all_active_suspensions(&self, guild_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         let rows = sqlx::query(
-            "SELECT id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
-             FROM suspensions WHERE until_datetime > ? AND active = TRUE",
+            "SELECT id, guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
+             FROM suspensions WHERE until_datetime > ? AND guild_id = ? AND active = TRUE",
         )
             .bind(&now)
+            .bind(guild_id)
             .fetch_all(&self.pool)
             .await?;
 
@@ -143,6 +151,7 @@ impl Database {
             .into_iter()
             .map(|row| Suspension {
                 id: row.get("id"),
+                guild_id: row.get("guild_id"),
                 user_id: row.get("user_id"),
                 moderator_id: row.get("moderator_id"),
                 previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
@@ -161,6 +170,7 @@ impl Database {
 #[derive(Debug)]
 pub struct Suspension {
     pub id: i64,
+    pub guild_id: i64,
     pub user_id: i64,
     pub moderator_id: i64,
     pub previous_roles: Vec<String>,

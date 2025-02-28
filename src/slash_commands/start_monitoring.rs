@@ -50,6 +50,7 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
         for row in expired_suspensions {
             let suspension = Suspension {
                 id: row.get("id"),
+                guild_id: row.get("guild_id"),
                 user_id: row.get("user_id"),
                 moderator_id: row.get("moderator_id"),
                 previous_roles: row.get::<String, _>("previous_roles").split(',').map(String::from).collect(),
