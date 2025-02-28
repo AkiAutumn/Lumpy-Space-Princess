@@ -22,3 +22,11 @@ pub fn has_user_suspension_permission(ctx: &Context<'_>, member: &Cow<Member>) -
     
     true
 }
+
+pub async fn is_user_suspended(ctx: &Context<'_>, member: &Member) -> bool {
+    let guild_id = ctx.guild_id().unwrap().get();
+    let db = &ctx.data().database;
+    let active_suspensions = db.get_active_suspensions(guild_id as i64, member.user.id.get() as i64).await.unwrap();
+    
+    active_suspensions.len() > 0
+}
