@@ -89,6 +89,6 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
             }
         }
         
-        sleep_until(Instant::now() + std::time::Duration::from_secs(60)).await;
+        sleep_until(Instant::now() + std::time::Duration::from_secs(config.monitoring_interval_in_seconds)).await;
     }
 }

@@ -1,22 +1,24 @@
+monitoring_interval_in_seconds = 60
+
 [guilds]
-    
+
     # Annikas Server
     [guilds.1339214142892150834]
-        
+
         [guilds.1339214142892150834.roles]
         suspend_permitted = [1339954817736376411]
         suspended = 1339954767820230699
-        
+
         [guilds.1339214142892150834.channels]
         log = 1339985167556804639
-    
+
     # Drift Nation
     [guilds.688851295217778743]
-        
+
         [guilds.688851295217778743.roles]
-        #                             Moderator           Community Moderator  Senior Staff
+        #                    Moderator           Community Moderator  Senior Staff
         suspend_permitted = [974459625753706586, 1223086804283162785, 1236270862521466951]
         suspended = 1339581035297640468
-        
+
         [guilds.688851295217778743.channels]
         log = 1243193570287161396
