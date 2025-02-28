@@ -1,6 +1,7 @@
 use sqlx::{SqlitePool, Row};
 use chrono::Utc;
 use std::error::Error;
+use std::fs::File;
 
 pub struct Database {
     pub(crate) pool: SqlitePool,
@@ -9,9 +10,24 @@ pub struct Database {
 impl Database {
     // Initialize the database connection
     pub async fn new() -> Result<Self, Box<dyn Error>> {
-        let database_url = std::env::var("DATABASE_URL").expect("Missing DATABASE_URL"); // Path to the SQLite file
-        let pool = SqlitePool::connect(&database_url).await?;
+        
+        let db_url = "database.db";
+        
+        let pool = match SqlitePool::connect(db_url).await {
+            Ok(pool) => Ok(pool),
+            Err(err) => {
+                if err.to_string().contains("No such file or directory") {
+                    println!("Database file missing — creating {}", db_url);
+                    File::create(db_url).expect("Failed to create database file");
 
+                    // Now we try connecting again
+                    SqlitePool::connect(db_url).await
+                } else {
+                    Err(err)
+                }
+            }
+        }.unwrap();
+        
         // Create the table if it doesn't exist
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS suspensions (
