@@ -72,10 +72,12 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
                 
                 let member_id = UserId::new(suspension.user_id as u64);
                 let member = guild.member(&ctx, member_id).await?;
+                let avatar_url = member.avatar_url().unwrap_or_else(|| member.user.default_avatar_url().to_string());
 
                 // Create an embed
                 let embed = serenity::CreateEmbed::default()
                     .title("Suspension expired")
+                    .thumbnail(avatar_url)
                     .color(serenity::Colour::ROSEWATER)
                     .field("User", member.mention().to_string(), false)
                     .footer(CreateEmbedFooter::new(format!("ID: {}", suspension.id)));

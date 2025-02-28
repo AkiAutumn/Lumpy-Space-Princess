@@ -87,10 +87,13 @@ pub async fn suspend(
         let log_channel_id = config.guilds.get(&guild_id.to_string()).unwrap().channels.log;
         
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
+
+            let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
             
             // Create an embed
             let embed = serenity::CreateEmbed::default()
                 .title("Suspension Log")
+                .thumbnail(avatar_url)
                 .color(serenity::Colour::DARK_RED)
                 .field("User", user.mention().to_string(), false)
                 .field("Issued by", author_member.mention().to_string(), false)
