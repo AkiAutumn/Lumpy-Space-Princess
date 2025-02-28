@@ -49,7 +49,9 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
                 let member_id = UserId::new(suspension.user_id as u64);
                 let member = guild.member(&http, member_id).await
                     .expect(&format!("Failed to get member ({}) from guild {}", member_id, guild.name));
-                let avatar_url = member.avatar_url().unwrap_or_else(|| member.user.default_avatar_url().to_string());
+                
+                let user = &member.user;
+                let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
 
                 // Create an embed
                 let embed = serenity::CreateEmbed::default()
@@ -57,7 +59,7 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
                     .thumbnail(avatar_url)
                     .color(serenity::Colour::ROSEWATER)
                     .field("User", member.mention().to_string(), false)
-                    .footer(CreateEmbedFooter::new(format!("ID: {}", suspension.id)));
+                    .footer(CreateEmbedFooter::new(format!("Suspension ID: {}", suspension.id)));
 
                 // Send the embed
                 tuple.1.send_message(&http, serenity::CreateMessage::default().embed(embed)).await
