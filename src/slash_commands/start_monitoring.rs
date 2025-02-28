@@ -3,7 +3,6 @@ use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::{CreateEmbedFooter, GuildId, Http, Mentionable, UserId};
 use sqlx::{Row, SqlitePool};
 use tokio::time::{sleep_until, Instant};
-use crate::Error;
 use crate::config::Config;
 use crate::db::{Database, Suspension};
 use crate::slash_commands::suspend::{restore_roles};
@@ -62,7 +61,7 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
 
                 // Send the embed
                 tuple.1.send_message(&http, serenity::CreateMessage::default().embed(embed)).await
-                    .expect(&format!("Failed to send message to log-channel of guild {}", guild.name));;
+                    .expect(&format!("Failed to send message to log-channel of guild {}", guild.name));
             } else {
                 println!("Unable to find log channel for guild {} ({})", guild.name, guild_id);
             }
