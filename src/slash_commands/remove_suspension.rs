@@ -12,8 +12,7 @@ pub async fn remove_suspension(
 
     let author_member = &ctx.author_member().await.unwrap();
 
-    if !helper::has_user_suspension_permission(&ctx, author_member) {
-        let _ = &ctx.defer_or_broadcast().await;
+    if !helper::has_user_suspension_permission(&ctx, author_member).await {
         return Ok(());
     }
     

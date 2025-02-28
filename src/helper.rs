@@ -8,7 +8,7 @@ pub fn date_string_to_discord_timestamp(date_string: &str) -> String {
     format!("<t:{}>", datetime.and_local_timezone(Local).unwrap().timestamp())
 }
 
-pub fn has_user_suspension_permission(ctx: &Context<'_>, member: &Cow<Member>) -> bool {
+pub async fn has_user_suspension_permission(ctx: &Context<'_>, member: &Cow<'_, Member>) -> bool {
 
     let config = &ctx.data().config;
     let guild_id = &ctx.guild_id().unwrap().get();
@@ -17,6 +17,13 @@ pub fn has_user_suspension_permission(ctx: &Context<'_>, member: &Cow<Member>) -
     let members_permitted_roles = member.roles.iter().filter(|role_id| permitted_roles.contains(&role_id.get())).collect::<Vec<_>>();
     
     if members_permitted_roles.is_empty() {
+
+        ctx.send(
+            poise::CreateReply::default()
+                .content(":x: You don't have permission for that!")
+                .ephemeral(true)
+        ).await.expect("Failed to send no-permission-reply");
+        
         return false;
     }
     
