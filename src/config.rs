@@ -3,7 +3,7 @@ use std::fs;
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Config {
-    pub(crate) guilds: std::collections::HashMap<u64, GuildConfig>,
+    pub(crate) guilds: std::collections::HashMap<String, GuildConfig>,
     pub(crate) monitoring_interval_in_seconds: u64,
 }
 

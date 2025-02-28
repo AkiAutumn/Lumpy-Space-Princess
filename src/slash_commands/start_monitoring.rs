@@ -35,7 +35,7 @@ pub async fn start_monitoring(ctx: Context<'_>) -> Result<(), Error> {
     let guild = ctx.guild_id().unwrap();
     let guild_id = guild.get();
     let config = &ctx.data().config;
-    let log_channel_id = config.guilds.get(&guild_id).unwrap().channels.log;
+    let log_channel_id = config.guilds.get(&guild_id.to_string()).unwrap().channels.log;
 
     loop {
     

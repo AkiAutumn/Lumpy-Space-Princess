@@ -12,7 +12,7 @@ pub fn has_user_suspension_permission(ctx: &Context<'_>, member: &Cow<Member>) -
 
     let config = &ctx.data().config;
     let guild_id = &ctx.guild_id().unwrap().get();
-    let permitted_roles = &config.guilds.get(guild_id).unwrap().roles.suspend_permitted;
+    let permitted_roles = &config.guilds.get(&guild_id.to_string()).unwrap().roles.suspend_permitted;
     
     let members_permitted_roles = member.roles.iter().filter(|role_id| permitted_roles.contains(&role_id.get())).collect::<Vec<_>>();
     

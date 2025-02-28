@@ -78,13 +78,13 @@ pub async fn suspend(
 
         let config = &ctx.data().config;
         let guild_id = &ctx.guild_id().unwrap().get();
-        let suspended_role = config.guilds.get(guild_id).unwrap().roles.suspended;
+        let suspended_role = config.guilds.get(&guild_id.to_string()).unwrap().roles.suspended;
 
         guild_member.remove_roles(&ctx, &guild_member.roles).await?;
         guild_member.add_role(&ctx, suspended_role).await?;
 
         // Try to obtain the guilds log channel
-        let log_channel_id = config.guilds.get(guild_id).unwrap().channels.log;
+        let log_channel_id = config.guilds.get(&guild_id.to_string()).unwrap().channels.log;
         
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
             
@@ -124,7 +124,7 @@ pub async fn restore_roles(ctx: Context<'_>, suspension: &Suspension) -> Result<
     let guild_member = guild.member(&ctx, suspension.user_id as u64).await.unwrap();
     let config = &ctx.data().config;
     let guild_id = &ctx.guild_id().unwrap().get();
-    let suspended_role_id = config.guilds.get(guild_id).unwrap().roles.suspended;
+    let suspended_role_id = config.guilds.get(&guild_id.to_string()).unwrap().roles.suspended;
     let suspended_role = RoleId::from(suspended_role_id);
     let role_ids = suspension.previous_roles.clone();
     let role_ids_serenity: Vec<RoleId> = role_ids.iter()
