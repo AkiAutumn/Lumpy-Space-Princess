@@ -63,9 +63,8 @@ impl Database {
 
         let rows = sqlx::query(
             "SELECT id, guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active
-             FROM suspensions WHERE until_datetime > ? AND guild_id = ? AND user_id = ?",
+             FROM suspensions WHERE guild_id = ? AND user_id = ?",
         )
-            .bind(&now)
             .bind(guild_id)
             .bind(&user_id)
             .fetch_all(&self.pool)

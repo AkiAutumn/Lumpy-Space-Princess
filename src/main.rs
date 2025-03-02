@@ -73,7 +73,7 @@ async fn main() {
     
     // Spawn monitoring task
     let http = client.http.clone();
-    let _ = tokio::spawn( async move{
+    let _ = tokio::spawn( async move {
         start_monitoring(&database.pool, &http, &config, &database).await;
     });
     

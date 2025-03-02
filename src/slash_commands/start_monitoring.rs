@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::Local;
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::{CreateEmbedFooter, GuildId, Http, Mentionable, UserId};
 use sqlx::{Row, SqlitePool};
@@ -13,7 +13,7 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
 
         // Check expired suspensions after waking up
         let expired_suspensions = sqlx::query("SELECT * FROM suspensions WHERE until_datetime <= ? AND active = TRUE")
-            .bind(Utc::now().format("%Y-%m-%d %H:%M:%S").to_string())
+            .bind(Local::now().naive_local().format("%Y-%m-%d %H:%M:%S").to_string())
             .fetch_all(pool)
             .await
             .unwrap_or_else(|_| vec![]);
