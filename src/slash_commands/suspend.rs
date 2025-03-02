@@ -133,7 +133,14 @@ pub async fn restore_roles(http: &Http, guild: GuildId, suspended_role_id: u64, 
         .collect();
 
     guild_member.remove_role(&http, suspended_role).await?;
-    guild_member.add_roles(&http, &*role_ids_serenity).await?;
+    
+    for role_id in role_ids_serenity {
+        // Check if the role still exists
+        if guild.role(&http, role_id).await.is_ok() {
+            // Give the role back to the member
+            guild_member.add_role(&http, &role_id).await?;
+        }
+    }
 
     Ok(())
 }
