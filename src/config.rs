@@ -1,14 +1,16 @@
 use serde::Deserialize;
 use std::fs;
+use poise::serenity_prelude::Guild;
 
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct Config {
-    pub(crate) guilds: std::collections::HashMap<String, GuildConfig>,
     pub(crate) monitoring_interval_in_seconds: u64,
+    pub(crate) guilds: Vec<GuildConfig>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct GuildConfig {
+    pub(crate) id: u64,
     pub(crate) channels: Channels,
     pub(crate) roles: Roles,
 }
@@ -29,6 +31,10 @@ impl Config {
         let content = fs::read_to_string(path)?;
         let config: Config = toml::from_str(&content)?;
         Ok(config)
+    }
+
+    pub fn get_guild_config(&self, guild_id: u64) -> Option<&GuildConfig> {
+        self.guilds.iter().find(|g| g.id == guild_id)
     }
 }
 

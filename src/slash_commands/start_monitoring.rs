@@ -5,7 +5,7 @@ use sqlx::{Row, SqlitePool};
 use tokio::time::{sleep_until, Instant};
 use crate::config::Config;
 use crate::db::{Database, Suspension};
-use crate::slash_commands::suspend::{restore_roles};
+use crate::helper::restore_roles;
 
 pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, db: &Database) {
 
@@ -33,8 +33,9 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
 
             let guild = http.get_guild(GuildId::new(suspension.guild_id as u64)).await.unwrap();
             let guild_id = guild.id;
-            let log_channel_id = config.guilds.get(&guild_id.to_string()).unwrap().channels.log;
-            let suspended_role_id = config.guilds.get(&guild_id.to_string()).unwrap().roles.suspended;
+            // TODO GET GUILD CONFIG
+            let log_channel_id = config.guilds.get(&guild_id.get()).unwrap().channels.log;
+            let suspended_role_id = config.guilds.get(&guild_id.get()).unwrap().roles.suspended;
 
             // Try to restore roles
             restore_roles(&http, guild_id, suspended_role_id, &suspension).await.expect(format!("Unable to restore roles for user id {}", suspension.user_id).as_str());

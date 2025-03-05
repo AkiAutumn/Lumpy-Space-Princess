@@ -3,6 +3,7 @@ use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::{CreateMessage, GuildId, Http, Mentionable, RoleId};
 use regex::Regex;
 use crate::{Context, Error};
+use crate::config::Config;
 use crate::db::Suspension;
 use crate::helper;
 
@@ -18,12 +19,12 @@ pub async fn suspend(
     let author_member = &ctx.author_member().await.unwrap();
     
     // Check if author has suspension permission
-    if !helper::has_user_suspension_permission(&ctx, author_member).await {
+    if !helper::user_has_suspension_permission(&ctx, author_member).await {
         return Ok(());
     }
     
     // Check if the user has an active suspension
-    if helper::is_user_suspended(&ctx, author_member).await {
+    if helper::user_is_suspended(&ctx, author_member).await {
         
         ctx.send(
             poise::CreateReply::default()
@@ -78,13 +79,14 @@ pub async fn suspend(
 
         let config = &ctx.data().config;
         let guild_id = &ctx.guild_id().unwrap().get();
-        let suspended_role = config.guilds.get(&guild_id.to_string()).unwrap().roles.suspended;
+        let guild_config = Config::get_guild_config(&config, *guild_id).unwrap();
+        let suspended_role = guild_config.roles.suspended;
 
         guild_member.remove_roles(&ctx, &guild_member.roles).await?;
         guild_member.add_role(&ctx, suspended_role).await?;
 
         // Try to obtain the guilds log channel
-        let log_channel_id = config.guilds.get(&guild_id.to_string()).unwrap().channels.log;
+        let log_channel_id = guild_config.channels.log;
         
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
 
@@ -120,27 +122,4 @@ pub async fn suspend(
 
         Ok(())
     }
-}
-
-pub async fn restore_roles(http: &Http, guild: GuildId, suspended_role_id: u64, suspension: &Suspension) -> Result<(), Error> {
-
-    let guild_member = guild.member(&http, suspension.user_id as u64).await.unwrap();
-    let suspended_role = RoleId::from(suspended_role_id);
-    let role_ids = suspension.previous_roles.clone();
-    let role_ids_serenity: Vec<RoleId> = role_ids.iter()
-        .filter_map(|id| id.parse::<u64>().ok())
-        .map(RoleId::from)
-        .collect();
-
-    guild_member.remove_role(&http, suspended_role).await?;
-    
-    for role_id in role_ids_serenity {
-        // Check if the role still exists
-        if guild.role(&http, role_id).await.is_ok() {
-            // Give the role back to the member
-            guild_member.add_role(&http, &role_id).await?;
-        }
-    }
-
-    Ok(())
 }
