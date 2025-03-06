@@ -92,13 +92,13 @@ pub async fn suspend(
 
         // Try to get the public log channel
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
-            
+
             // Send a message
             tuple.1.send_message(&ctx, CreateMessage::default().content(
                 format!("Name: {}\r\nReason: {}\r\nUntil: {}",
                 user.mention(), &reason_string, helper::date_string_to_discord_timestamp(until_string)),
             )).await?;
-            
+
         } else {
             let guild_name = &ctx.guild_id().unwrap().name(&ctx).unwrap();
             println!("Unable to find log channel for guild {} ({})", guild_name, guild_id);
@@ -115,9 +115,9 @@ pub async fn suspend(
                 .title("Suspension Log")
                 .author(CreateEmbedAuthor::new(&user.name).icon_url(avatar_url))
                 .color(serenity::Colour::DARK_RED)
-                .field("User", user.mention().to_string(), true)
-                .field("Issued by", author_member.mention().to_string(), true)
-                .field("Until", helper::date_string_to_discord_timestamp(until_string), true)
+                .field("User", user.mention().to_string(), false)
+                .field("Issued by", author_member.mention().to_string(), false)
+                .field("Until", helper::date_string_to_discord_timestamp(until_string), false)
                 .field("Reason", &reason_string, true)
                 .field("Removed roles", role_mentions.join(", ").as_str(), true);
 
