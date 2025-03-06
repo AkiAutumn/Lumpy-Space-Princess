@@ -42,8 +42,6 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
 
             // Set suspension inactive
             db.set_suspension_inactive(suspension.id).await;
-
-            println!("Suspension ({}) has ended for user id {}", suspension.id, suspension.user_id);
             
             // Try to get the public log channel
             if let Some(tuple) = guild.channels(&http).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
@@ -53,7 +51,7 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
                     .expect(&format!("Failed to get member ({}) from guild {}", member_id, guild.name));
 
                 // Send a message
-                tuple.1.send_message(&http, serenity::CreateMessage::default().content(format!("{}'s Suspension expired", member.mention()))).await
+                tuple.1.send_message(&http, serenity::CreateMessage::default().content(format!("### Suspension expired\r\n{}", member.mention()))).await
                     .expect(&format!("Failed to send message to log-channel of guild {}", guild.name));
             } else {
                 println!("Unable to find log channel for guild {} ({})", guild.name, guild_id);
