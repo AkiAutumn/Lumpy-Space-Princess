@@ -1,6 +1,6 @@
 use chrono::Local;
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{CreateEmbedFooter, GuildId, Http, Mentionable, UserId};
+use poise::serenity_prelude::{GuildId, Http, Mentionable, UserId};
 use sqlx::{Row, SqlitePool};
 use tokio::time::{sleep_until, Instant};
 use crate::config::Config;
@@ -44,26 +44,16 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
             db.set_suspension_inactive(suspension.id).await;
 
             println!("Suspension ({}) has ended for user id {}", suspension.id, suspension.user_id);
-
+            
+            // Try to get the public log channel
             if let Some(tuple) = guild.channels(&http).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
                 
                 let member_id = UserId::new(suspension.user_id as u64);
                 let member = guild.member(&http, member_id).await
                     .expect(&format!("Failed to get member ({}) from guild {}", member_id, guild.name));
-                
-                let user = &member.user;
-                let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
 
-                // Create an embed
-                let embed = serenity::CreateEmbed::default()
-                    .title("Suspension expired")
-                    .thumbnail(avatar_url)
-                    .color(serenity::Colour::ROSEWATER)
-                    .field("User", member.mention().to_string(), false)
-                    .footer(CreateEmbedFooter::new(format!("Suspension ID: {}", suspension.id)));
-
-                // Send the embed
-                tuple.1.send_message(&http, serenity::CreateMessage::default().embed(embed)).await
+                // Send a message
+                tuple.1.send_message(&http, serenity::CreateMessage::default().content(format!("{}'s Suspension expired", member.mention()))).await
                     .expect(&format!("Failed to send message to log-channel of guild {}", guild.name));
             } else {
                 println!("Unable to find log channel for guild {} ({})", guild.name, guild_id);

@@ -1,6 +1,6 @@
 use chrono::{Duration, Local};
 use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{CreateMessage, Mentionable};
+use poise::serenity_prelude::{CreateEmbedAuthor, CreateMessage, Mentionable};
 use regex::Regex;
 use crate::{Context, Error};
 use crate::config::Config;
@@ -86,26 +86,19 @@ pub async fn suspend(
         guild_member.remove_roles(&ctx, &guild_member.roles).await?;
         guild_member.add_role(&ctx, suspended_role).await?;
 
-        // Try to obtain the guilds log channel
+        // Get the log channel id's from guild config
         let log_channel_id = guild_config.channels.log;
         let staff_log_channel_id = guild_config.channels.staff_log;
 
-        // Send embed to public log channel
+        // Try to get the public log channel
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
-
-            let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
-
-            // Create an embed
-            let embed = serenity::CreateEmbed::default()
-                .title("Suspension Log")
-                .thumbnail(avatar_url)
-                .color(serenity::Colour::DARK_RED)
-                .field("User", user.mention().to_string(), false)
-                .field("Until", helper::date_string_to_discord_timestamp(until_string), false)
-                .field("Reason", &reason_string, false);
             
-            // Send the embed
-            tuple.1.send_message(&ctx, CreateMessage::default().embed(embed)).await?;
+            // Send a message
+            tuple.1.send_message(&ctx, CreateMessage::default().content(
+                format!("Name: {}\r\nReason: {}\r\nUntil: {}",
+                user.mention(), &reason_string, helper::date_string_to_discord_timestamp(until_string)),
+            )).await?;
+            
         } else {
             let guild_name = &ctx.guild_id().unwrap().name(&ctx).unwrap();
             println!("Unable to find log channel for guild {} ({})", guild_name, guild_id);
@@ -120,12 +113,12 @@ pub async fn suspend(
             // Create an embed
             let embed = serenity::CreateEmbed::default()
                 .title("Suspension Log")
-                .thumbnail(avatar_url)
+                .author(CreateEmbedAuthor::new(&user.name).icon_url(avatar_url))
                 .color(serenity::Colour::DARK_RED)
                 .field("User", user.mention().to_string(), false)
-                .field("Issued by", author_member.mention().to_string(), false)
+                .field("Issued by", author_member.mention().to_string(), true)
                 .field("Until", helper::date_string_to_discord_timestamp(until_string), false)
-                .field("Reason", &reason_string, false)
+                .field("Reason", &reason_string, true)
                 .field("Removed roles", role_mentions.join(", ").as_str(), false);
 
             // Send the embed

@@ -6,7 +6,7 @@ use crate::helper::restore_roles;
 
 /// Removes a users active suspension
 #[poise::command(slash_command)]
-pub async fn remove_suspension(
+pub async fn remove_suspension (
     ctx: Context<'_>,
     #[description = "Selected user"] user: serenity::User,
 ) -> Result<(), Error> {

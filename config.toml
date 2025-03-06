@@ -8,8 +8,8 @@ channels.staff_log = 1347240056913530891
 channels.log = 1339985167556804639
 
 [[guilds]] # Drift Nation
-id = 688851295217778743 #  Moderator           Car Meets Moderation Team
-roles.suspend_permitted = [974459625753706586, 693072413541269625]
+id = 688851295217778743 #  Moderator
+roles.suspend_permitted = [974459625753706586]
 roles.suspended = 1339581035297640468
 channels.staff_log = 1243193570287161396
 channels.log = 1243193570287161396
