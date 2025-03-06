@@ -24,7 +24,7 @@ pub async fn suspend(
     }
     
     // Check if the user has an active suspension
-    if helper::user_is_suspended(&ctx, author_member).await {
+    if helper::user_is_suspended(&ctx, &user).await {
         
         ctx.send(
             poise::CreateReply::default()

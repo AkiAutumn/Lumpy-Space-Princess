@@ -107,7 +107,7 @@ impl Database {
             .fetch_all(&self.pool)
             .await?;
 
-        let suspensions = rows
+        let suspensions: Vec<Suspension> = rows
             .into_iter()
             .map(|row| Suspension {
                 id: row.get("id"),

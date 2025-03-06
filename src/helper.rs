@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use chrono::{Local, NaiveDateTime};
-use poise::serenity_prelude::{GuildId, Http, Member, RoleId};
+use poise::serenity_prelude::{GuildId, Http, Member, RoleId, User};
 use crate::config::Config;
 use crate::{Context, Error};
 use crate::db::Suspension;
@@ -33,10 +33,11 @@ pub async fn user_has_suspension_permission(ctx: &Context<'_>, member: &Cow<'_, 
     true
 }
 
-pub async fn user_is_suspended(ctx: &Context<'_>, member: &Member) -> bool {
+pub async fn user_is_suspended(ctx: &Context<'_>, user: &User) -> bool {
+    
     let guild_id = ctx.guild_id().unwrap().get();
     let db = &ctx.data().database;
-    let active_suspensions = db.get_active_suspensions(guild_id as i64, member.user.id.get() as i64).await.unwrap();
+    let active_suspensions = db.get_active_suspensions(guild_id as i64, user.id.get() as i64).await.unwrap();
     
     active_suspensions.len() > 0
 }
