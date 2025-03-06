@@ -19,7 +19,7 @@ pub async fn user_has_suspension_permission(ctx: &Context<'_>, member: &Cow<'_, 
     
     let members_permitted_roles = member.roles.iter().filter(|role_id| permitted_roles.contains(&role_id.get())).collect::<Vec<_>>();
     
-    if members_permitted_roles.is_empty() {
+    if members_permitted_roles.is_empty() && !member.permissions.unwrap().administrator() {
 
         ctx.send(
             poise::CreateReply::default()
