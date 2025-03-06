@@ -115,11 +115,11 @@ pub async fn suspend(
                 .title("Suspension Log")
                 .author(CreateEmbedAuthor::new(&user.name).icon_url(avatar_url))
                 .color(serenity::Colour::DARK_RED)
-                .field("User", user.mention().to_string(), false)
+                .field("User", user.mention().to_string(), true)
                 .field("Issued by", author_member.mention().to_string(), true)
-                .field("Until", helper::date_string_to_discord_timestamp(until_string), false)
+                .field("Until", helper::date_string_to_discord_timestamp(until_string), true)
                 .field("Reason", &reason_string, true)
-                .field("Removed roles", role_mentions.join(", ").as_str(), false);
+                .field("Removed roles", role_mentions.join(", ").as_str(), true);
 
             // Send the embed
             tuple.1.send_message(&ctx, CreateMessage::default().embed(embed)).await?;
