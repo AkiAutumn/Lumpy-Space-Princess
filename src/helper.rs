@@ -10,7 +10,7 @@ pub fn date_string_to_discord_timestamp(date_string: &str) -> String {
     format!("<t:{}>", datetime.and_local_timezone(Local).unwrap().timestamp())
 }
 
-pub async fn user_has_suspension_permission(ctx: &Context<'_>, member: &Cow<'_, Member>) -> bool {
+pub async fn member_has_suspension_permission(ctx: &Context<'_>, member: &Cow<'_, Member>) -> bool {
 
     let config = &ctx.data().config;
     let guild_id = &ctx.guild_id().unwrap().get();

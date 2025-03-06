@@ -12,7 +12,7 @@ pub async fn suspension_history(
 
     let author_member = &ctx.author_member().await.unwrap();
 
-    if !helper::user_has_suspension_permission(&ctx, author_member).await {
+    if !helper::member_has_suspension_permission(&ctx, author_member).await {
         return Ok(());
     }
 
