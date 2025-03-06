@@ -57,7 +57,8 @@ pub async fn suspend(
 
         let guild = ctx.guild_id().unwrap();
         let guild_member = guild.member(&ctx, user.id).await.unwrap();
-        let roles: Vec<String> = guild_member.roles.iter().map(|role_id| role_id.get().to_string()).collect();
+        let roles = &guild_member.roles;
+        let role_ids: Vec<String> = roles.iter().map(|role_id| role_id.get().to_string()).collect();
         let db = &ctx.data().database;
 
         let until_string = &until.format("%Y-%m-%d %H:%M:%S").to_string();
@@ -68,7 +69,7 @@ pub async fn suspend(
             guild_id: guild.get() as i64,
             user_id: user.id.get() as i64,
             moderator_id: ctx.author().id.get() as i64,
-            previous_roles: roles,
+            previous_roles: role_ids,
             from_datetime: now.format("%Y-%m-%d %H:%M:%S").to_string(),
             until_datetime: until_string.to_string(),
             reason: reason,
@@ -87,7 +88,9 @@ pub async fn suspend(
 
         // Try to obtain the guilds log channel
         let log_channel_id = guild_config.channels.log;
-        
+        let staff_log_channel_id = guild_config.channels.staff_log;
+
+        // Send embed to public log channel
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {
 
             let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
@@ -98,7 +101,6 @@ pub async fn suspend(
                 .thumbnail(avatar_url)
                 .color(serenity::Colour::DARK_RED)
                 .field("User", user.mention().to_string(), false)
-                .field("Issued by", author_member.mention().to_string(), false)
                 .field("Until", helper::date_string_to_discord_timestamp(until_string), false)
                 .field("Reason", &reason_string, false);
             
@@ -107,6 +109,30 @@ pub async fn suspend(
         } else {
             let guild_name = &ctx.guild_id().unwrap().name(&ctx).unwrap();
             println!("Unable to find log channel for guild {} ({})", guild_name, guild_id);
+        }
+
+        // Send embed to staff log channel with more information
+        if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == staff_log_channel_id}) {
+
+            let avatar_url = user.avatar_url().unwrap_or_else(|| user.default_avatar_url());
+            let role_mentions: Vec<String> = roles.iter().map(|role| role.mention().to_string()).collect();
+
+            // Create an embed
+            let embed = serenity::CreateEmbed::default()
+                .title("Suspension Log")
+                .thumbnail(avatar_url)
+                .color(serenity::Colour::DARK_RED)
+                .field("User", user.mention().to_string(), false)
+                .field("Issued by", author_member.mention().to_string(), false)
+                .field("Until", helper::date_string_to_discord_timestamp(until_string), false)
+                .field("Reason", &reason_string, false)
+                .field("Removed roles", role_mentions.join(", ").as_str(), false);
+
+            // Send the embed
+            tuple.1.send_message(&ctx, CreateMessage::default().embed(embed)).await?;
+        } else {
+            let guild_name = &ctx.guild_id().unwrap().name(&ctx).unwrap();
+            println!("Unable to find staff log channel for guild {} ({})", guild_name, guild_id);
         }
         
         ctx.reply(format!(":hammer: {} has been suspended until {}!", user.mention(), helper::date_string_to_discord_timestamp(until_string))).await?;

@@ -17,6 +17,7 @@ pub(crate) struct GuildConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct Channels {
     pub(crate)log: u64,
+    pub(crate)staff_log: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]

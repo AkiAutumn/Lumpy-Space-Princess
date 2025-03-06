@@ -1,13 +1,15 @@
 monitoring_interval_in_seconds = 60
 
-[[guilds]]
+[[guilds]] # Annika's Server
 id = 1339214142892150834
 roles.suspend_permitted = [1339954817736376411]
 roles.suspended = 1339954767820230699
+channels.staff_log = 1339985167556804639
 channels.log = 1339985167556804639
 
-[[guilds]]
+[[guilds]] # Drift Nation
 id = 688851295217778743
 roles.suspend_permitted = [974459625753706586, 1223086804283162785, 1236270862521466951]
 roles.suspended = 1339581035297640468
+channels.staff_log = 1243193570287161396
 channels.log = 1243193570287161396
