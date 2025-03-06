@@ -2,12 +2,13 @@ mod slash_commands;
 mod db;
 mod helper;
 mod config;
+pub(crate) mod start_monitoring;
 
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
 use crate::db::Database;
 use crate::config::Config;
-use crate::slash_commands::start_monitoring::start_monitoring;
+use start_monitoring::start_monitoring;
 
 struct Data {
     pub config: Config,
