@@ -1,6 +1,5 @@
 use serde::Deserialize;
 use std::fs;
-use poise::serenity_prelude::Guild;
 
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct Config {

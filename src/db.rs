@@ -59,7 +59,6 @@ impl Database {
 
     // Retrieve all suspensions for a specific user
     pub async fn get_suspensions(&self, guild_id: i64, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
-        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         let rows = sqlx::query(
             "SELECT id, guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason, active

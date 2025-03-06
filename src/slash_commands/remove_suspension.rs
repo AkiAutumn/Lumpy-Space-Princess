@@ -23,7 +23,7 @@ pub async fn remove_suspension(
     let suspensions = db.get_active_suspensions(guild_id as i64, user.id.get() as i64).await?;
     let member = guild.member(ctx, user.id).await?;
     let config = &ctx.data().config;
-    let guild_config = Config::get_guild_config(&config, *guild_id).unwrap();
+    let guild_config = Config::get_guild_config(&config, guild_id).unwrap();
     let suspended_role_id = guild_config.roles.suspended;
 
     for suspension in &suspensions {
