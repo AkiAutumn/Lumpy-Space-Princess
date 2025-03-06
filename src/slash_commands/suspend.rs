@@ -95,7 +95,7 @@ pub async fn suspend(
 
             // Send a message
             tuple.1.send_message(&ctx, CreateMessage::default().content(
-                format!("Name: {}\r\nReason: {}\r\nUntil: {}",
+                format!("### Suspension Log\r\nName: {}\r\nReason: **{}**\r\nUntil: {}",
                 user.mention(), &reason_string, helper::date_string_to_discord_timestamp(until_string)),
             )).await?;
 

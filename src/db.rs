@@ -1,5 +1,5 @@
 use sqlx::{SqlitePool, Row};
-use chrono::Utc;
+use chrono::Local;
 use std::error::Error;
 
 #[derive(Clone)]
@@ -98,7 +98,7 @@ impl Database {
 
     // Retrieve all active suspensions for a specific user
     pub async fn get_active_suspensions(&self, guild_id: i64, user_id: i64) -> Result<Vec<Suspension>, sqlx::Error> {
-        let now = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        let now = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         let rows = sqlx::query(
             "SELECT id, guild_id, user_id, moderator_id, previous_roles, from_datetime, until_datetime, reason
