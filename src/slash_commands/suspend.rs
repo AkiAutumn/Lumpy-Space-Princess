@@ -87,8 +87,8 @@ pub async fn suspend(
         guild_member.add_role(&ctx, suspended_role).await?;
 
         // Get the log channel id's from guild config
-        let log_channel_id = guild_config.channels.log;
-        let staff_log_channel_id = guild_config.channels.staff_log;
+        let log_channel_id = guild_config.channels.ban_log;
+        let staff_log_channel_id = guild_config.channels.ban_log_staff;
 
         // Try to get the public log channel
         if let Some(tuple) = guild.channels(&ctx).await.unwrap().iter().find(|tuple| {*tuple.0 == log_channel_id}) {

@@ -3,19 +3,31 @@ mod db;
 mod helper;
 mod config;
 pub(crate) mod start_monitoring;
+mod event_handler;
 
 use poise::serenity_prelude as serenity;
 use dotenv::dotenv;
 use crate::db::Database;
 use crate::config::Config;
 use start_monitoring::start_monitoring;
+use event_handler::Handler;
+use once_cell::sync::Lazy;
+use toml;
+use std::fs;
+use std::sync::RwLock;
 
 struct Data {
     pub config: Config,
     pub database: Database
-} // User data, which is stored and accessible in all command invocations
+}
+
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
+
+pub static CONFIG: Lazy<RwLock<Config>> = Lazy::new(|| {
+    let content = fs::read_to_string("config.toml").unwrap();
+    toml::from_str(&content).unwrap()
+});
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +36,7 @@ async fn main() {
     dotenv().ok();
 
     // Load the config
-    let config = Config::from_file("config.toml").expect("Unable to access config.toml");
+    let config = CONFIG.read().unwrap();
 
     // Get the database
     let database = Database::new().await.expect("Failed to initialize database");
@@ -60,6 +72,7 @@ async fn main() {
     // Build the client
     let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
+        .event_handler(Handler)
         .await
         .unwrap();
     

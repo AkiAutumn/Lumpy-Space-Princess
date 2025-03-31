@@ -4,12 +4,13 @@ monitoring_interval_in_seconds = 60
 id = 1339214142892150834
 roles.suspend_permitted = [1347240334798622844]
 roles.suspended = 1339954767820230699
-channels.staff_log = 1347240056913530891
-channels.log = 1339985167556804639
+channels.ban_log_staff = 1347240056913530891
+channels.ban_log = 1339985167556804639
+channels.event_log = 1339985167556804639
 
 [[guilds]] # Drift Nation
 id = 688851295217778743 #  Moderator
 roles.suspend_permitted = [974459625753706586]
 roles.suspended = 1339581035297640468
-channels.staff_log = 1243193570287161396
-channels.log = 1277353712204910662
+channels.ban_log_staff = 1243193570287161396
+channels.ban_log = 1277353712204910662

@@ -16,8 +16,9 @@ pub(crate) struct GuildConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct Channels {
-    pub(crate)log: u64,
-    pub(crate)staff_log: u64,
+    pub(crate) ban_log: u64,
+    pub(crate) ban_log_staff: u64,
+    pub(crate) event_log: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -27,12 +28,6 @@ pub(crate) struct Roles {
 }
 
 impl Config {
-    pub fn from_file(path: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let content = fs::read_to_string(path)?;
-        let config: Config = toml::from_str(&content)?;
-        Ok(config)
-    }
-
     pub fn get_guild_config(&self, guild_id: u64) -> Option<&GuildConfig> {
         self.guilds.iter().find(|g| g.id == guild_id)
     }

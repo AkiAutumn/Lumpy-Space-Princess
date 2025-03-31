@@ -34,7 +34,7 @@ pub async fn start_monitoring(pool: &SqlitePool, http: &Http, config: &Config, d
             let guild = http.get_guild(GuildId::new(suspension.guild_id as u64)).await.unwrap();
             let guild_id = guild.id;
             let guild_config = Config::get_guild_config(&config, guild_id.get()).unwrap();
-            let log_channel_id = guild_config.channels.log;
+            let log_channel_id = guild_config.channels.ban_log;
             let suspended_role_id = guild_config.roles.suspended;
 
             // Try to restore roles
